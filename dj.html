@@ -1,46 +1,409 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DJ Request Queue</title>
+
 <style>
-*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#111;color:#fff;margin:0}.wrap{max-width:1050px;margin:auto;padding:22px}
-.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}h1{margin:0}.status{color:#7ee29b;font-size:13px}
-.card{background:#1d1d1d;border-radius:14px;padding:16px;margin:12px 0;border-left:5px solid #f0b400}.k{border-left-color:#c85cff}
-.title{font-size:20px;font-weight:bold;margin:7px 0}.meta{color:#aaa;font-size:14px}.msg{color:#ddd;margin:8px 0}
-button{border:0;border-radius:8px;padding:10px 13px;margin:3px;font-weight:bold;cursor:pointer}.ok{background:#39b96b}.no{background:#d34d4d;color:#fff}.done{background:#4778d8;color:#fff}
-.pill{display:inline-block;padding:5px 9px;border-radius:20px;background:#333;font-size:12px}.empty{text-align:center;color:#aaa;padding:40px}
-.tabs{display:flex;gap:8px;margin:18px 0}.tabs button{background:#333;color:#fff}.tabs button.active{background:#f0b400;color:#111}
-</style></head>
-<body><div class="wrap">
-<div class="top"><div><h1>🎧 DJ Request Queue</h1><div id="status" class="status">Connecting…</div></div></div>
-<div class="tabs"><button id="all" class="active">All</button><button id="songs">🎵 Songs</button><button id="karaoke">🎤 Karaoke</button></div>
-<div id="queue"></div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL="https://nhmamyhkutirwtenpyzw.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY="sb_publishable_4h9IT2qjyvTgLlHq_Fd18g_MuliWIGj";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-let filter="all";
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
-async function load(){
- const {data,error}=await sb.from("requests").select("*").in("status",["pending","approved"]).order("created_at",{ascending:true});
- if(error){document.getElementById("status").textContent="Database connection error";return}
- document.getElementById("status").textContent="● Live";
- const x=filter==="all"?data:data.filter(r=>r.type===filter);
- document.getElementById("queue").innerHTML=x.length?x.map(r=>`<div class="card ${r.type==="karaoke"?"k":""}">
- <span class="pill">${r.type==="karaoke"?"🎤 KARAOKE":"🎵 SONG"}</span>
- <div class="title">${esc(r.title)}${r.artist?" — "+esc(r.artist):""}</div>
- <div class="meta">Requested by ${esc(r.name)} · ${new Date(r.created_at).toLocaleString()}</div>
- ${r.message?`<div class="msg">${esc(r.message)}</div>`:""}
- <div>${r.status==="pending"?`<button class="ok" onclick="act('${r.id}','approved')">Approve</button>`:"<span class='pill'>APPROVED</span>"}
- <button class="no" onclick="act('${r.id}','rejected')">Reject</button>
- <button class="done" onclick="act('${r.id}','played')">Played</button></div></div>`).join(""):"<div class='empty'>No requests waiting.</div>";
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#111;
+  color:#fff;
 }
-async function act(id,status){const {error}=await sb.from("requests").update({status}).eq("id",id);if(!error)load()}
-document.getElementById("all").onclick=()=>set("all");document.getElementById("songs").onclick=()=>set("song");document.getElementById("karaoke").onclick=()=>set("karaoke");
-function set(v){filter=v;document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));document.getElementById(v==="all"?"all":v==="song"?"songs":"karaoke").classList.add("active");load()}
-sb.channel("request-changes").on("postgres_changes",{event:"*",schema:"public",table:"requests"},()=>load()).subscribe();
+
+.wrap{
+  max-width:1000px;
+  margin:auto;
+  padding:18px;
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  flex-wrap:wrap;
+}
+
+h1{
+  margin:0;
+  font-size:28px;
+}
+
+.status{
+  font-size:14px;
+  color:#7cff9b;
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  margin:18px 0 10px;
+}
+
+.tabs button{
+  border:0;
+  border-radius:9px;
+  padding:11px 18px;
+  font-weight:bold;
+  cursor:pointer;
+  background:#333;
+  color:#fff;
+}
+
+.tabs button.active{
+  background:#f0b400;
+  color:#111;
+}
+
+.filters{
+  display:flex;
+  gap:8px;
+  margin:10px 0 18px;
+  flex-wrap:wrap;
+}
+
+.filters button{
+  border:0;
+  border-radius:20px;
+  padding:8px 14px;
+  background:#333;
+  color:#fff;
+  cursor:pointer;
+}
+
+.filters button.active{
+  background:#555;
+}
+
+.card{
+  background:#1d1d1d;
+  border-radius:14px;
+  padding:16px;
+  margin:12px 0;
+  border-left:5px solid #f0b400;
+}
+
+.card.history{
+  border-left-color:#777;
+}
+
+.title{
+  font-size:20px;
+  font-weight:bold;
+}
+
+.meta{
+  color:#bbb;
+  margin-top:6px;
+  font-size:14px;
+}
+
+.msg{
+  margin-top:8px;
+  color:#ddd;
+}
+
+.pill{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  background:#333;
+  font-size:12px;
+  margin-bottom:8px;
+}
+
+.status-pill{
+  background:#333;
+}
+
+button.action{
+  border:0;
+  border-radius:8px;
+  padding:10px 13px;
+  margin:8px 4px 0 0;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.approve{background:#39d98a;color:#111}
+.reject{background:#ff6575;color:#111}
+.played{background:#42a5f5;color:#111}
+
+.empty{
+  color:#999;
+  text-align:center;
+  padding:50px 10px;
+}
+
+.refresh{
+  border:0;
+  border-radius:8px;
+  padding:9px 13px;
+  background:#333;
+  color:#fff;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <h1>🎧 DJ Request Queue</h1>
+      <div id="status" class="status">Connecting...</div>
+    </div>
+
+    <button class="refresh" onclick="load()">↻ Refresh</button>
+  </div>
+
+  <div class="tabs">
+    <button id="queueTab" class="active" onclick="setPage('queue')">
+      📋 Queue
+    </button>
+
+    <button id="historyTab" onclick="setPage('history')">
+      🕘 History
+    </button>
+  </div>
+
+  <div class="filters">
+    <button id="allFilter" class="active" onclick="setFilter('all')">All</button>
+    <button id="songFilter" onclick="setFilter('song')">🎵 Songs</button>
+    <button id="karaokeFilter" onclick="setFilter('karaoke')">🎤 Karaoke</button>
+  </div>
+
+  <div id="queue"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+const SUPABASE_URL="https://nhmamyhkutirwtenpyzw.supabase.co";
+
+/* PUT YOUR EXISTING sb_publishable_ KEY HERE */
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_4h9IT2qjyvTgLlHq_Fd18g_MuliWIGj";
+
+const sb=supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+let page="queue";
+let filter="all";
+
+function esc(s){
+  return String(s ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function setPage(p){
+  page=p;
+
+  document.getElementById("queueTab").classList.toggle("active",p==="queue");
+  document.getElementById("historyTab").classList.toggle("active",p==="history");
+
+  load();
+}
+
+function setFilter(f){
+  filter=f;
+
+  document.getElementById("allFilter").classList.toggle("active",f==="all");
+  document.getElementById("songFilter").classList.toggle("active",f==="song");
+  document.getElementById("karaokeFilter").classList.toggle("active",f==="karaoke");
+
+  load();
+}
+
+async function load(){
+
+  const status=document.getElementById("status");
+  const box=document.getElementById("queue");
+
+  status.textContent="Loading...";
+
+  let query=sb
+    .from("requests")
+    .select("*");
+
+  if(page==="queue"){
+    query=query
+      .in("status",["pending","approved"])
+      .order("created_at",{ascending:true});
+  }else{
+    query=query
+      .in("status",["played","rejected"])
+      .order("created_at",{ascending:false});
+  }
+
+  const {data,error}=await query;
+
+  if(error){
+    status.textContent="Database connection error";
+    box.innerHTML='<div class="empty">Could not load requests.</div>';
+    return;
+  }
+
+  status.textContent="● Live";
+
+  let rows=data || [];
+
+  if(filter!=="all"){
+    rows=rows.filter(r=>r.type===filter);
+  }
+
+  if(!rows.length){
+    box.innerHTML=
+      page==="queue"
+      ? '<div class="empty">🎵 No requests waiting.</div>'
+      : '<div class="empty">🕘 No request history yet.</div>';
+
+    return;
+  }
+
+  box.innerHTML=rows.map(r=>{
+
+    const type=r.type==="karaoke" ? "🎤 KARAOKE" : "🎵 SONG";
+
+    const time=new Date(r.created_at).toLocaleString(
+      "en-GB",
+      {
+        day:"2-digit",
+        month:"2-digit",
+        year:"numeric",
+        hour:"2-digit",
+        minute:"2-digit"
+      }
+    );
+
+    if(page==="history"){
+
+      const statusText=r.status==="played"
+        ? "🟢 PLAYED"
+        : "🔴 REJECTED";
+
+      return `
+        <div class="card history">
+
+          <div class="pill">${type}</div>
+          <div class="pill status-pill">${statusText}</div>
+
+          <div class="title">
+            ${esc(r.title)}
+            ${r.artist ? " — "+esc(r.artist) : ""}
+          </div>
+
+          <div class="meta">
+            Requested by ${esc(r.name)} · ${time}
+          </div>
+
+          ${r.message ? `
+            <div class="msg">
+              💬 ${esc(r.message)}
+            </div>
+          ` : ""}
+
+        </div>
+      `;
+
+    }
+
+    return `
+      <div class="card">
+
+        <div class="pill">${type}</div>
+
+        <div class="title">
+          ${esc(r.title)}
+          ${r.artist ? " — "+esc(r.artist) : ""}
+        </div>
+
+        <div class="meta">
+          Requested by ${esc(r.name)} · ${time}
+        </div>
+
+        ${r.message ? `
+          <div class="msg">
+            💬 ${esc(r.message)}
+          </div>
+        ` : ""}
+
+        <div>
+
+          ${
+            r.status==="pending"
+            ? `<button class="action approve"
+                onclick="changeStatus('${r.id}','approved')">
+                ✓ Approve
+              </button>`
+            : `<span class="pill">✓ Approved</span>`
+          }
+
+          <button class="action reject"
+            onclick="changeStatus('${r.id}','rejected')">
+            ✕ Reject
+          </button>
+
+          <button class="action played"
+            onclick="changeStatus('${r.id}','played')">
+            ▶ Played
+          </button>
+
+        </div>
+
+      </div>
+    `;
+
+  }).join("");
+}
+
+async function changeStatus(id,status){
+
+  const {error}=await sb
+    .from("requests")
+    .update({status:status})
+    .eq("id",id);
+
+  if(error){
+    alert("Could not update request: "+error.message);
+    return;
+  }
+
+  load();
+}
+
+/* Live updates */
+
+sb
+.channel("requests-live")
+.on(
+  "postgres_changes",
+  {
+    event:"*",
+    schema:"public",
+    table:"requests"
+  },
+  () => load()
+)
+.subscribe();
+
 load();
-</script></body></html>
+
+</script>
+
+</body>
+</html>
