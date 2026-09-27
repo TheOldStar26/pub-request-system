@@ -5,25 +5,90 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Pub Requests</title>
 <style>
-*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#111;color:#fff;margin:0}
-.wrap{max-width:720px;margin:auto;padding:22px}.card{background:#1d1d1d;border-radius:18px;padding:22px}
-h1{text-align:center;margin:5px 0}.sub{text-align:center;color:#aaa;margin-bottom:20px}
+*{box-sizing:border-box}
+body{
+  font-family:Arial,sans-serif;
+  background:#111 url('old-star-background.png') center center / cover fixed no-repeat;
+  color:#fff;
+  margin:0;
+  min-height:100vh;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.48);
+  z-index:-1;
+}
+.wrap{max-width:720px;margin:auto;padding:22px 16px}
+.card{
+  background:rgba(15,15,15,.78);
+  backdrop-filter:blur(4px);
+  border:1px solid rgba(240,180,0,.35);
+  border-radius:20px;
+  padding:24px;
+  box-shadow:0 12px 35px rgba(0,0,0,.45);
+}
+.brand{
+  text-align:center;
+  font-weight:900;
+  letter-spacing:2px;
+  color:#f0b400;
+  font-size:14px;
+  margin-bottom:6px;
+}
+h1{text-align:center;margin:4px 0 8px;font-size:30px}
+.sub{text-align:center;color:#ddd;margin-bottom:22px}
 label{display:block;margin:15px 0 7px;font-weight:bold}
-input,textarea,select{width:100%;padding:14px;border-radius:10px;border:1px solid #444;background:#292929;color:#fff;font-size:16px}
-textarea{min-height:90px;resize:vertical}.buttons{margin-top:20px}button{width:100%;padding:15px;border:0;border-radius:10px;background:#f0b400;color:#111;font-size:17px;font-weight:bold}
-.notice{text-align:center;margin-top:15px;padding:13px;border-radius:10px}.ok{background:#173d25;color:#b8f5c8}.bad{background:#4a2020;color:#ffd0d0}
-.small{text-align:center;color:#777;font-size:12px;margin-top:18px}
+input,textarea,select{
+  width:100%;
+  padding:14px;
+  border-radius:10px;
+  border:1px solid #555;
+  background:rgba(35,35,35,.92);
+  color:#fff;
+  font-size:16px;
+}
+input:focus,textarea:focus,select:focus{
+  outline:2px solid #f0b400;
+  border-color:#f0b400;
+}
+textarea{min-height:90px;resize:vertical}
+.buttons{margin-top:22px}
+button{
+  width:100%;
+  padding:15px;
+  border:0;
+  border-radius:10px;
+  background:#f0b400;
+  color:#111;
+  font-size:17px;
+  font-weight:bold;
+  cursor:pointer;
+}
+button:disabled{opacity:.65;cursor:wait}
+.notice{text-align:center;margin-top:15px;padding:13px;border-radius:10px}
+.ok{background:#173d25;color:#b8f5c8}
+.bad{background:#4a2020;color:#ffd0d0}
+.small{text-align:center;color:#bbb;font-size:12px;margin-top:18px}
+@media(max-width:520px){
+  .wrap{padding:12px}
+  .card{padding:20px 16px}
+  h1{font-size:26px}
+}
 </style></head>
 <body>
 <div class="wrap"><div class="card">
-<h1>🎵 Pub Requests</h1><div class="sub">Send a song or karaoke request</div>
+<div class="brand">⭐ THE OLD STAR ⭐</div>
+<h1>🎵 Song & Karaoke Requests</h1>
+<div class="sub">Send your request straight to the DJ</div>
 <label>Request type</label><select id="type"><option value="song">🎵 DJ Song</option><option value="karaoke">🎤 Karaoke</option></select>
 <label>Your name</label><input id="name" maxlength="40" placeholder="Your name">
 <label>Song title</label><input id="title" maxlength="100" placeholder="Song title">
 <label>Artist</label><input id="artist" maxlength="100" placeholder="Artist">
 <label>Message (optional)</label><textarea id="message" maxlength="200" placeholder="Anything for the DJ?"></textarea>
 <div class="buttons"><button id="send">Send request</button></div>
-<div id="notice"></div><div class="small">Requests are subject to DJ approval.</div>
+<div id="notice"></div><div class="small">🍻 Requests are subject to DJ approval • Please be patient during busy periods.</div>
 </div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
