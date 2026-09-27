@@ -36,7 +36,7 @@ $("send").onclick=async()=>{
  if(!data.name||!data.title){show("Please enter your name and song title.","bad");return;}
  $("send").disabled=true;$("send").textContent="Sending…";
  const {error}=await sb.from("requests").insert(data);
- if(error) show("Sorry, the request could not be sent. Check the setup.","bad");
+if(error){show("Error: "+error.message,"bad");}
  else {show("✅ Request sent to the DJ!","ok");$("name").value="";$("title").value="";$("artist").value="";$("message").value="";}
  $("send").disabled=false;$("send").textContent="Send request";
 };
