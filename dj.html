@@ -387,17 +387,34 @@ async function load(){
   }).join("");
 }
 async function changeStatus(id,status){
-  const {error}=await sb
-    .from("requests")
-    .update({status})
-    .eq("id",id);
+  try{
+    const res=await fetch(SUPABASE_URL+"/rest/v1/requests?id=eq."+encodeURIComponent(id),{
+      method:"PATCH",
+      headers:{
+        "apikey":SUPABASE_PUBLISHABLE_KEY,
+        "Authorization":"Bearer "+SUPABASE_PUBLISHABLE_KEY,
+        "Content-Type":"application/json",
+        "Prefer":"return=representation"
+      },
+      body:JSON.stringify({status})
+    });
 
-  if(error){
-    alert("Could not update request: "+error.message);
-    return;
+    const body=await res.text();
+
+    if(!res.ok){
+      alert("Could not update request.\n\nSupabase says:\n"+body);
+      return;
+    }
+
+    if(!body || body==="[]"){
+      alert("No request was updated. This usually means Supabase permissions/RLS need checking.");
+      return;
+    }
+
+    await load();
+  }catch(err){
+    alert("Update failed: "+err.message);
   }
-
-  await load();
 }
 
 async function clearHistory(){
