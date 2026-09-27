@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pub Requests</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#111;color:#fff;margin:0}
+.wrap{max-width:720px;margin:auto;padding:22px}.card{background:#1d1d1d;border-radius:18px;padding:22px}
+h1{text-align:center;margin:5px 0}.sub{text-align:center;color:#aaa;margin-bottom:20px}
+label{display:block;margin:15px 0 7px;font-weight:bold}
+input,textarea,select{width:100%;padding:14px;border-radius:10px;border:1px solid #444;background:#292929;color:#fff;font-size:16px}
+textarea{min-height:90px;resize:vertical}.buttons{margin-top:20px}button{width:100%;padding:15px;border:0;border-radius:10px;background:#f0b400;color:#111;font-size:17px;font-weight:bold}
+.notice{text-align:center;margin-top:15px;padding:13px;border-radius:10px}.ok{background:#173d25;color:#b8f5c8}.bad{background:#4a2020;color:#ffd0d0}
+.small{text-align:center;color:#777;font-size:12px;margin-top:18px}
+</style></head>
+<body>
+<div class="wrap"><div class="card">
+<h1>🎵 Pub Requests</h1><div class="sub">Send a song or karaoke request</div>
+<label>Request type</label><select id="type"><option value="song">🎵 DJ Song</option><option value="karaoke">🎤 Karaoke</option></select>
+<label>Your name</label><input id="name" maxlength="40" placeholder="Your name">
+<label>Song title</label><input id="title" maxlength="100" placeholder="Song title">
+<label>Artist</label><input id="artist" maxlength="100" placeholder="Artist">
+<label>Message (optional)</label><textarea id="message" maxlength="200" placeholder="Anything for the DJ?"></textarea>
+<div class="buttons"><button id="send">Send request</button></div>
+<div id="notice"></div><div class="small">Requests are subject to DJ approval.</div>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://nhmamyhkutirwtenpyzw.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_4h9IT2qjyvTgLlHq_Fd18g_MuliWIGj";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const $=id=>document.getElementById(id);
+$("send").onclick=async()=>{
+ const data={type:$("type").value,name:$("name").value.trim(),title:$("title").value.trim(),artist:$("artist").value.trim()||null,message:$("message").value.trim()||null};
+ if(!data.name||!data.title){show("Please enter your name and song title.","bad");return;}
+ $("send").disabled=true;$("send").textContent="Sending…";
+ const {error}=await sb.from("requests").insert(data);
+ if(error) show("Sorry, the request could not be sent. Check the setup.","bad");
+ else {show("✅ Request sent to the DJ!","ok");$("name").value="";$("title").value="";$("artist").value="";$("message").value="";}
+ $("send").disabled=false;$("send").textContent="Send request";
+};
+function show(t,c){$("notice").className="notice "+c;$("notice").textContent=t}
+</script>
+</body></html>
