@@ -386,6 +386,20 @@ async function load(){
 
   }).join("");
 }
+async function changeStatus(id,status){
+  const {error}=await sb
+    .from("requests")
+    .update({status})
+    .eq("id",id);
+
+  if(error){
+    alert("Could not update request: "+error.message);
+    return;
+  }
+
+  await load();
+}
+
 async function clearHistory(){
   if(!confirm("Clear ALL request history?\n\nPlayed and rejected requests will be permanently deleted.")) return;
 
