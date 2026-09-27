@@ -226,14 +226,12 @@ function esc(s){
 }
 
 function setPage(p){
-  page=p;
-
-  document.getElementById("queueTab").classList.toggle("active",p==="queue");
-  document.getElementById("historyTab").classList.toggle("active",p==="history");
-
-  load();
+page=p;
+document.getElementById("queueTab").classList.toggle("active",p==="queue");
+document.getElementById("historyTab").classList.toggle("active",p==="history");
+document.getElementById("clearHistoryBtn").style.display=p==="history" ? "inline-block" : "none";
+load();
 }
-
 function setFilter(f){
   filter=f;
 
@@ -385,16 +383,16 @@ async function load(){
 
   }).join("");
 }
-
-async function changeStatus(id,status){
+async function clearHistory(){
+  if(!confirm("Clear ALL request history?\n\nPlayed and rejected requests will be permanently deleted.")) return;
 
   const {error}=await sb
     .from("requests")
-    .update({status:status})
-    .eq("id",id);
+    .delete()
+    .in("status",["played","rejected"]);
 
   if(error){
-    alert("Could not update request: "+error.message);
+    alert("Could not clear history: "+error.message);
     return;
   }
 
