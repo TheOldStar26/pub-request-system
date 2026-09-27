@@ -151,7 +151,19 @@ button.action{
 </style>
 </head>
 
-<body>
+<body><div id="pinScreen" style="position:fixed;inset:0;background:#111;color:white;z-index:9999;display:flex;align-items:center;justify-content:center;text-align:center;">
+  <div>
+    <h1>🔐 DJ Login</h1>
+    <p>Enter DJ PIN</p>
+    <input id="pinInput" type="password" inputmode="numeric" maxlength="6"
+      style="font-size:28px;width:160px;text-align:center;padding:10px;border-radius:8px;">
+    <br><br>
+    <button onclick="unlockDJ()" style="font-size:18px;padding:12px 25px;border-radius:8px;">
+      Unlock
+    </button>
+    <p id="pinError" style="color:#ff6666;"></p>
+  </div>
+</div>
 
 <div class="wrap">
 
@@ -402,8 +414,21 @@ sb
 .subscribe();
 
 load();
+  function unlockDJ(){
+  const pin = document.getElementById("pinInput").value;
 
+  if(pin === "2026"){
+    sessionStorage.setItem("djUnlocked","yes");
+    document.getElementById("pinScreen").style.display="none";
+  } else {
+    document.getElementById("pinError").textContent="Incorrect PIN";
+    document.getElementById("pinInput").value="";
+  }
+}
+
+if(sessionStorage.getItem("djUnlocked")==="yes"){
+  document.getElementById("pinScreen").style.display="none";
+}
 </script>
-
 </body>
 </html>
