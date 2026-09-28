@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111315">
+<title>The Old Star · Song Requests</title>
+<style>
+:root{color-scheme:dark;--bg:#111315;--panel:#1b1f20;--panel2:#24292a;--line:#343a3a;--text:#f7f7f2;--muted:#b3b9b7;--gold:#f0b400;--green:#1d5735;--red:#532626}
+*{box-sizing:border-box}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);margin:0;line-height:1.45}
+.wrap{max-width:760px;margin:auto;padding:clamp(14px,4vw,28px);padding-bottom:calc(28px + env(safe-area-inset-bottom))}.header{text-align:center;margin:6px 0 22px}.brand{font-size:clamp(1.7rem,7vw,2.4rem);font-weight:800;letter-spacing:-.035em;margin:0}.sub{color:var(--muted);margin:5px 0 0;font-size:1rem}
+.card{background:var(--panel);border:1px solid #252a2b;border-radius:20px;padding:clamp(18px,5vw,28px);margin:16px 0;box-shadow:0 10px 28px #0002}h2{font-size:1.25rem;margin:0 0 4px}.hint{color:var(--muted);font-size:.94rem;margin:0 0 18px}
+label{display:block;margin:17px 0 8px;font-weight:700;font-size:1rem}input,textarea,select{display:block;width:100%;min-height:54px;padding:14px 15px;border-radius:12px;border:1px solid #454c4d;background:var(--panel2);color:var(--text);font:inherit;font-size:16px}textarea{min-height:92px;resize:vertical}input:focus,textarea:focus,select:focus,button:focus-visible{outline:3px solid #f0b40088;outline-offset:2px}
+button{font:inherit;cursor:pointer}.primary{width:100%;min-height:58px;margin-top:20px;padding:14px 18px;border:0;border-radius:14px;background:var(--gold);color:#171717;font-weight:800;font-size:1.08rem}.primary:disabled{opacity:.6;cursor:wait}.secondary{min-height:46px;padding:10px 14px;border:1px solid #555d5d;border-radius:12px;background:transparent;color:var(--text);font-weight:700}
+.notice{display:none;margin-top:14px;padding:13px 14px;border-radius:12px}.notice.show{display:block}.ok{background:var(--green);color:#dcffe7}.bad{background:var(--red);color:#ffe1e1}
+.section-head{display:flex;justify-content:space-between;align-items:start;gap:12px}.list{display:grid;gap:10px;margin-top:14px}.request,.popular-row{background:#24292a;border:1px solid var(--line);border-radius:14px;padding:14px}.request-title{font-weight:750;font-size:1.02rem}.meta{color:var(--muted);font-size:.9rem;margin-top:4px}.status-line{display:flex;gap:5px;margin-top:14px;align-items:center}.step{flex:1;text-align:center;font-size:.72rem;color:#7e8785}.step::before{content:"";display:block;height:6px;border-radius:99px;background:#424949;margin-bottom:6px}.step.done{color:#e9d590}.step.done::before{background:var(--gold)}.step.current{color:var(--text);font-weight:800}.step.current::before{background:#f5d45a}.badge{display:inline-block;border-radius:999px;background:#353b3b;color:#fff;padding:4px 9px;font-size:.78rem;font-weight:750}.popular-row{display:flex;justify-content:space-between;align-items:center;gap:12px}.popular-title{font-weight:750}.popular-meta{color:var(--muted);font-size:.86rem}.popular-row button{flex:none}.empty{color:var(--muted);padding:10px 0}.small{text-align:center;color:#929997;font-size:.84rem;margin:20px 8px}
+@media(min-width:640px){.fields{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}.fields .full{grid-column:1/-1}}
+@media(max-width:420px){.popular-row{align-items:flex-start;flex-wrap:wrap}.popular-row button{width:100%}.status-line{gap:2px}.step{font-size:.66rem}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header class="header"><h1 class="brand">🎵 The Old Star</h1><p class="sub">Pick a song or step up for karaoke.</p></header>
+<section class="card" aria-labelledby="request-heading">
+<h2 id="request-heading">Make a request</h2><p class="hint">Send it to the DJ. Requests are subject to approval.</p>
+<div class="fields">
+<div class="full"><label for="type">What would you like to do?</label><select id="type"><option value="song">🎵 Request a DJ song</option><option value="karaoke">🎤 Sing karaoke</option></select></div>
+<div><label for="name" id="name-label">Your name</label><input id="name" maxlength="40" autocomplete="nickname" placeholder="Name for the DJ"></div>
+<div><label for="title">Song title</label><input id="title" maxlength="100" autocomplete="off" placeholder="What song should we play?"></div>
+<div class="full"><label for="artist">Artist <span style="font-weight:400;color:var(--muted)">(optional)</span></label><input id="artist" maxlength="100" autocomplete="off" placeholder="Who performs it?"></div>
+<div class="full"><label for="message">Message <span style="font-weight:400;color:var(--muted)">(optional)</span></label><textarea id="message" maxlength="200" placeholder="Add a note for the DJ"></textarea></div>
+</div>
+<button class="primary" id="send" type="button">Send song request</button><div id="notice" class="notice" role="status" aria-live="polite"></div>
+</section>
+<section class="card" aria-labelledby="mine-heading">
+<div class="section-head"><div><h2 id="mine-heading">📋 My Requests</h2><p class="hint" style="margin:4px 0 0">Check requests sent from this browser.</p></div><button class="secondary" id="refresh-mine" type="button">Refresh</button></div>
+<div id="mine" class="list" aria-live="polite"><div class="empty">No requests yet. Send a song or karaoke request above and it will appear here.</div></div>
+</section>
+<section class="card" aria-labelledby="popular-heading">
+<div class="section-head"><div><h2 id="popular-heading">🔥 Popular Requests</h2><p class="hint" style="margin:4px 0 0">Songs guests are requesting most.</p></div><button class="secondary" id="refresh-popular" type="button">Refresh</button></div>
+<div id="popular" class="list" aria-live="polite"><div class="empty">No popular requests to show yet. Check back soon.</div></div>
+</section>
+<p class="small">Your request history is tied to this browser. Keep its site data to check requests later.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://nhmamyhkutirwtenpyzw.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_4h9IT2qjyvTgLlHq_Fd18g_MuliWIGj";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const $=id=>document.getElementById(id), TOKEN_KEY="oldstar_customer_token_v1", RATE_KEY="oldstar_request_times_v1";
+const CUSTOMER_API_URL=`${SUPABASE_URL}/functions/v1/customer-requests`;
+// The deployed customer-requests function is wired below; false keeps the
+// existing direct-insert path active until the customer-page cutover is approved.
+const CUSTOMER_API_ENABLED=true;
+const stages=["pending","approved","playing","played"];
+function token(){let value=localStorage.getItem(TOKEN_KEY);if(!value){const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);value=Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("");localStorage.setItem(TOKEN_KEY,value)}return value}
+async function customerApi(action,requestData){if(!CUSTOMER_API_ENABLED)throw new Error("Secure customer service is disabled");const response=await fetch(CUSTOMER_API_URL,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY,"X-Oldstar-Customer-Token":token()},body:JSON.stringify(requestData?{action,request:requestData}:{action})});const text=await response.text();let payload={};try{payload=text?JSON.parse(text):{}}catch{}if(!response.ok){const error=new Error(payload.error||payload.message||`Customer service returned ${response.status}`);error.status=response.status;error.body=text;throw error}return payload}
+function show(text,kind){const n=$("notice");n.className="notice show "+kind;n.textContent=text}
+function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function stateLabel(status){return ({pending:"Pending",approved:"Approved",playing:"Playing",played:"Played",rejected:"Not approved"})[String(status||"").toLowerCase()]||String(status||"Pending")}
+function progress(status){const current=stages.indexOf(String(status||"").toLowerCase());if(current<0)return `<span class="badge">${escapeHtml(stateLabel(status))}</span>`;return `<div class="status-line" aria-label="${stateLabel(status)}">${stages.map((s,i)=>`<div class="step ${i<current?"done":i===current?"current":""}" ${i===current?'aria-current="step"':""}>${s[0].toUpperCase()+s.slice(1)}</div>`).join("")}</div>`}
+function normalizeRows(data){if(Array.isArray(data))return data;return Array.isArray(data?.requests)?data.requests:[]}
+async function loadMine(){const target=$("mine");if(!CUSTOMER_API_ENABLED){target.innerHTML='<div class="empty">Request tracking will appear here when the secure customer service is enabled. Requests can still be sent in the meantime.</div>';return}try{const result=await customerApi("mine");const rows=normalizeRows(result);target.innerHTML=rows.length?rows.map(r=>`<article class="request"><div class="request-title">${escapeHtml(r.title)}${r.artist?` — ${escapeHtml(r.artist)}`:""}</div><div class="meta">${r.type==="karaoke"?"🎤 Karaoke":"🎵 Song"} · ${new Date(r.created_at).toLocaleString()}</div>${progress(r.status)}</article>`).join(""):'<div class="empty">No requests yet. Send a song or karaoke request above and it will appear here.</div>'}catch(e){target.innerHTML='<div class="empty">We can’t show your request status just yet. Check back when request tracking is available.</div>';console.info("Customer status unavailable",e.message)}}
+async function loadPopular(){const target=$("popular");try{const {data,error}=await sb.rpc("customer_popular_requests");if(error)throw error;const rows=normalizeRows(data);target.innerHTML=rows.length?rows.map(r=>`<article class="popular-row"><div><div class="popular-title">${escapeHtml(r.title)}${r.artist?` — ${escapeHtml(r.artist)}`:""}</div><div class="popular-meta">${r.type==="karaoke"?"🎤 Karaoke":"🎵 Song"} · ${Number(r.request_count)||0} requests</div></div><button type="button" class="secondary" data-title="${escapeHtml(r.title)}" data-artist="${escapeHtml(r.artist||"")}" data-type="${escapeHtml(r.type||"song")}">Choose</button></article>`).join(""):'<div class="empty">No popular requests to show yet. Check back soon.</div>'}catch(e){target.innerHTML='<div class="empty">Popular requests will appear here when the popularity service is available.</div>';console.info("Popular requests unavailable",e.message)}}
+function checkLocalLimit(){const now=Date.now();let times=[];try{times=JSON.parse(localStorage.getItem(RATE_KEY)||"[]")}catch{}times=times.filter(t=>Number.isFinite(t)&&now-t<86400000);const recent=times.filter(t=>now-t<600000);if(recent.length>=3)return {ok:false,wait:Math.ceil((600000-(now-recent[0]))/60000)};if(times.length>=10)return {ok:false,wait:Math.ceil((86400000-(now-times[0]))/60000)};return {ok:true,times}}
+function recordLocalRequest(times){times.push(Date.now());localStorage.setItem(RATE_KEY,JSON.stringify(times))}
+$("type").addEventListener("change",()=>{$("send").textContent=$("type").value==="karaoke"?"Send karaoke request":"Send song request";$("name-label").textContent=$("type").value==="karaoke"?"Singer name":"Your name"});
+$("send").addEventListener("click",async()=>{
+ const data={type:$("type").value,name:$("name").value.trim(),title:$("title").value.trim(),artist:$("artist").value.trim()||null,message:$("message").value.trim()||null};
+ if(!data.name||!data.title){show("Please enter your name and song title.","bad");return}
+ const limit=checkLocalLimit();if(!limit.ok){show(`Please wait about ${limit.wait} minute${limit.wait===1?"":"s"} before sending more requests.`,"bad");return}
+ const button=$("send");button.disabled=true;button.textContent="Sending…";
+ try{
+  const trackingReady=CUSTOMER_API_ENABLED;
+  if(trackingReady)await customerApi("submit",data);else{const {error}=await sb.from("requests").insert(data);if(error)throw error}
+  recordLocalRequest(limit.times);
+  show(trackingReady?"✅ Request sent to the DJ! You can follow its status in My Requests.":"✅ Request sent to the DJ. Status tracking will be available when the secure customer service is enabled.","ok");$("title").value="";$("artist").value="";$("message").value="";await loadMine();
+ }catch(e){const limited=e.status===429||/rate|too many|limit/i.test(e.message||"");show(limited?"That’s a lot of requests at once. Please wait before trying again.":"Sorry, the request could not be sent. Please try again.","bad");console.error("Request submission failed",e)}
+ finally{button.disabled=false;button.textContent=$("type").value==="karaoke"?"Send karaoke request":"Send song request"}
+});
+$("popular").addEventListener("click",event=>{const button=event.target.closest("button[data-title]");if(!button)return;$("type").value=button.dataset.type==="karaoke"?"karaoke":"song";$("type").dispatchEvent(new Event("change"));$("title").value=button.dataset.title;$("artist").value=button.dataset.artist;$("request-heading").scrollIntoView({behavior:"smooth",block:"start"});$("title").focus()});
+$("refresh-mine").addEventListener("click",loadMine);$("refresh-popular").addEventListener("click",loadPopular);
+loadMine();loadPopular();
+</script>
+</body>
+</html>
