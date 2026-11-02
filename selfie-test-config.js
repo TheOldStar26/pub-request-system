@@ -1,0 +1,2 @@
+window.OLDSTAR_PHONE.selfiesEnabled=true;
+document.addEventListener('DOMContentLoaded',async()=>{const el=document.createElement('p');el.textContent='CONTROLLED SELFIE TEST — requests must remain pending. Setup ID: ';const input=document.createElement('input');input.readOnly=true;const bytes=new TextEncoder().encode(token());const hash=await crypto.subtle.digest('SHA-256',bytes);input.value=Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');el.append(input);document.querySelector('main').prepend(el);});
