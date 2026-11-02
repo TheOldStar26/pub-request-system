@@ -93,7 +93,7 @@
   function send() {
     var e = epoch, data, requestId;
     if (xhr) { return; }
-    if (!config.endpoint || (!token && !config.demo)) { text('submission', 'This kiosk needs staff setup. Your request has not been sent.'); return; }
+    if (!config.endpoint || (!token && !config.demo && !config.localGateway)) { text('submission', 'This kiosk needs staff setup. Your request has not been sent.'); return; }
     stopCamera();
     if (!pending) {
       data = {type: type, name: $('name').value.replace(/^\s+|\s+$/g, ''), title: $('title').value.replace(/^\s+|\s+$/g, ''), artist: $('artist').value.replace(/^\s+|\s+$/g, '') || null, message: $('message').value.replace(/^\s+|\s+$/g, '') || null};
