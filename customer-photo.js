@@ -1,33 +1,19 @@
-/* Personal phone page only: no kiosk credential, no inactivity reset, no persistent photo storage. */
-(function () {
- 'use strict';
- let photo=null,stream=null,attempt=0;
- const enabled=window.OLDSTAR_PHONE?.selfiesEnabled===true;
- const $=id=>document.getElementById(id),status=text=>{$('selfie-status').textContent=text;};
- function stop(){attempt++;if(stream){stream.getTracks().forEach(track=>track.stop());stream=null;}$('selfie-video').srcObject=null;$('selfie-video').hidden=true;$('selfie-capture').hidden=true;}
- function remove(){stop();photo=null;$('selfie-preview').removeAttribute('src');$('selfie-preview').hidden=true;$('selfie-remove').hidden=true;$('selfie-retake').hidden=true;$('selfie-take').hidden=false;status('No photo attached.');}
- async function take(){
-  if(!enabled)return;
-  stop();const current=attempt;status('Allow camera access if prompted.');
-  if(!navigator.mediaDevices?.getUserMedia){status('Camera capture is unavailable. You can still send a request without a selfie.');return;}
-  try{
-   const candidate=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});
-   if(current!==attempt){candidate.getTracks().forEach(track=>track.stop());return;}
-   stream=candidate;$('selfie-video').srcObject=stream;$('selfie-video').hidden=false;$('selfie-preview').hidden=true;$('selfie-capture').hidden=false;$('selfie-take').hidden=true;
-   await $('selfie-video').play();status('Tap Capture selfie when ready.');
-  }catch{status('Camera unavailable or permission denied. Skip the selfie and send your request normally.');}
- }
- $('selfie-take').onclick=take;$('selfie-retake').onclick=()=>{remove();take();};$('selfie-remove').onclick=remove;
- $('selfie-capture').onclick=()=>{
-  if(!enabled)return;
-  const video=$('selfie-video');if(!video.videoWidth)return;
-  const canvas=document.createElement('canvas'),scale=Math.min(1,640/Math.max(video.videoWidth,video.videoHeight));
-  canvas.width=Math.round(video.videoWidth*scale);canvas.height=Math.round(video.videoHeight*scale);canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-  const candidate=canvas.toDataURL('image/jpeg',0.72);canvas.width=canvas.height=1;
-  if(!candidate.startsWith('data:image/jpeg;base64,') || candidate.length>350000){status('Photo is too large. Retake it or skip the selfie.');stop();return;}
-  stop();photo=candidate;$('selfie-preview').src=photo;$('selfie-preview').hidden=false;$('selfie-remove').hidden=false;$('selfie-retake').hidden=false;$('selfie-take').hidden=true;status('Selfie ready. Only authorised DJ staff can view it.');
- };
+/* Photos stay in memory. Only JPEG pixels, never source metadata, are submitted. */
+(function(){'use strict';
+ const enabled=window.OLDSTAR_PHONE?.selfiesEnabled===true,$=id=>document.getElementById(id);
+ let photo=null,stream=null,attempt=0,locked=false;
+ const status=s=>{$('selfie-status').textContent=s;};
+ function stop(){attempt++;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}$('selfie-video').pause();$('selfie-video').srcObject=null;$('selfie-video').hidden=true;$('selfie-capture').hidden=true;}
+ function remove(){stop();photo=null;$('selfie-file').value='';$('selfie-preview').removeAttribute('src');$('selfie-preview').hidden=true;$('selfie-remove').hidden=true;$('selfie-retake').hidden=true;$('selfie-take').hidden=false;status('No photo attached. Send your request normally, or add a selfie.');}
+ function pixels(image,width,height){const c=document.createElement('canvas'),scale=Math.min(1,640/Math.max(width,height));c.width=Math.max(1,Math.round(width*scale));c.height=Math.max(1,Math.round(height*scale));c.getContext('2d').drawImage(image,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',0.72);c.width=c.height=1;if(!data.startsWith('data:image/jpeg;base64,')||data.length>350000)throw Error('Photo is too large. Try a different photo, or skip it.');return data;}
+ function preview(data){stop();photo=data;$('selfie-preview').src=data;$('selfie-preview').hidden=false;$('selfie-remove').hidden=false;$('selfie-retake').hidden=false;$('selfie-take').hidden=true;status('Selfie ready. Only signed-in, authorised DJ staff can view it.');}
+ async function take(){if(!enabled||locked)return;stop();const current=attempt;status('Allow camera access if prompted.');if(!navigator.mediaDevices?.getUserMedia){status('Live camera is unavailable. Choose a photo instead, or skip.');return;}
+ try{const candidate=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});if(current!==attempt||locked){candidate.getTracks().forEach(t=>t.stop());return;}stream=candidate;$('selfie-video').srcObject=stream;$('selfie-video').hidden=false;$('selfie-preview').hidden=true;$('selfie-capture').hidden=false;$('selfie-take').hidden=true;await $('selfie-video').play();status('Tap Capture selfie when ready.');}catch{status('Camera unavailable or permission denied. Choose a photo, or skip.');}}
+ $('selfie-take').onclick=take;$('selfie-retake').onclick=()=>{if(!locked){remove();take();}};$('selfie-remove').onclick=$('selfie-skip').onclick=()=>{if(!locked)remove();};
+ $('selfie-capture').onclick=()=>{if(!enabled||locked)return;const v=$('selfie-video');if(!v.videoWidth)return;try{preview(pixels(v,v.videoWidth,v.videoHeight));}catch(e){stop();status(e.message);}};
+ $('selfie-choose').onclick=()=>{if(enabled&&!locked)$('selfie-file').click();};
+ $('selfie-file').onchange=function(){if(!enabled||locked)return;const file=this.files?.[0];if(!file)return;if(!file.type.startsWith('image/')||file.size>5*1024*1024){status('Choose an image smaller than 5 MB, or skip the photo.');this.value='';return;}stop();const current=attempt,reader=new FileReader();reader.onload=()=>{if(current!==attempt||locked)return;const image=new Image();image.onload=()=>{if(current!==attempt||locked)return;try{preview(pixels(image,image.width,image.height));}catch(e){status(e.message);}image.src='';};image.onerror=()=>{if(current===attempt)status('This image could not be opened. Choose JPEG or PNG, or skip.');};image.src=reader.result;};reader.onerror=()=>status('Could not read the photo. Choose another, or skip.');reader.readAsDataURL(file);};
  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});window.addEventListener('pagehide',remove);
- if(!enabled)$('selfie-heading').parentElement.hidden=true;
- window.OldstarPhonePhoto={get:()=>photo,clear:remove,stop,lock:locked=>{stop();for(const id of ['selfie-take','selfie-capture','selfie-retake','selfie-remove'])$(id).disabled=locked;}};
+ $('selfie-heading').parentElement.hidden=!enabled;
+ window.OldstarPhonePhoto={get:()=>photo,clear:remove,stop,lock:value=>{locked=value;stop();for(const id of ['selfie-take','selfie-capture','selfie-retake','selfie-remove','selfie-choose','selfie-file','selfie-skip'])$(id).disabled=value;}};
 }());

@@ -32,13 +32,16 @@ button{font:inherit;cursor:pointer}.primary{width:100%;min-height:58px;margin-to
 </div>
 <section hidden aria-labelledby="selfie-heading" style="margin-top:24px">
 <h2 id="selfie-heading">Add a selfie <span style="font-weight:400">(optional)</span></h2>
-<p class="hint">Only authorised DJ staff can see it. Never shown on the audience screen. We aim to delete photos within 24 hours; automatic deletion runs every 15 minutes.</p>
+<p class="hint">Only authorised DJ staff can see it. Never shown on the audience screen. We aim to delete photos within 24 hours; automatic deletion runs every 5 minutes. Cleanup failures may delay deletion and pause new selfies.</p>
 <video id="selfie-video" autoplay muted playsinline hidden style="width:100%;max-height:320px"></video>
 <img id="selfie-preview" alt="Your selfie preview" hidden style="width:100%;max-height:320px;object-fit:contain">
 <button class="secondary" id="selfie-take" type="button">Take a selfie</button>
 <button class="secondary" id="selfie-capture" type="button" hidden>Capture selfie</button>
 <button class="secondary" id="selfie-retake" type="button" hidden>Retake</button>
 <button class="secondary" id="selfie-remove" type="button" hidden>Remove photo</button>
+<button class="secondary" id="selfie-choose" type="button">Choose a photo</button>
+<input id="selfie-file" type="file" accept="image/*" hidden>
+<button class="secondary" id="selfie-skip" type="button">Skip selfie</button>
 <p id="selfie-status" role="status" aria-live="polite">Skip this step to send without a photo.</p>
 </section>
 <button class="primary" id="send" type="button">Send song request</button><button class="secondary" id="clear-pending" type="button" hidden style="margin-top:14px">Clear this form (request may already have arrived)</button><div id="notice" class="notice" role="status" aria-live="polite"></div>
@@ -53,9 +56,9 @@ button{font:inherit;cursor:pointer}.primary{width:100%;min-height:58px;margin-to
 </section>
 <p class="small">Your request history is tied to this browser. Keep its site data to check requests later.</p>
 </main>
-<script src="customer-config.js"></script>
+<script src="customer-config.js?v=selfie-release-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
-<script src="customer-photo.js"></script>
+<script src="customer-photo.js?v=selfie-release-1"></script>
 <script>
 const SUPABASE_URL=window.OLDSTAR_PHONE?.supabaseUrl||"";
 const SUPABASE_PUBLISHABLE_KEY=window.OLDSTAR_PHONE?.publishableKey||"";
@@ -92,7 +95,7 @@ $("send").addEventListener("click",async()=>{
   if(trackingReady)await customerApi("submit",data);else{throw new Error("Staging configuration required")}
   recordLocalRequest(limit.times||[]);pendingSubmission=null;OldstarPhonePhoto.clear();lockRequest(false);$("clear-pending").hidden=true;
   show(trackingReady?"✅ Request sent to the DJ! You can follow its status in My Requests.":"✅ Request sent to the DJ. Status tracking will be available when the secure customer service is enabled.","ok");$("title").value="";$("artist").value="";$("message").value="";await loadMine();
- }catch(e){const limited=e.status===429||/rate|too many|limit/i.test(e.message||"");show(limited?"That’s a lot of requests at once. Please wait before trying again.":"We could not confirm delivery. Retry checks the same request without adding a duplicate.","bad");$("clear-pending").hidden=false;console.error("Request submission failed",e)}
+ }catch(e){if(e.status===403&&/Selfies are temporarily unavailable/.test(e.message)){pendingSubmission=null;OldstarPhonePhoto.clear();lockRequest(false);show("Selfies are temporarily unavailable. Your photo was removed; tap Send to request without it.","bad");return}const limited=e.status===429||/rate|too many|limit/i.test(e.message||"");show(limited?"That’s a lot of requests at once. Please wait before trying again.":"We could not confirm delivery. Retry checks the same request without adding a duplicate.","bad");$("clear-pending").hidden=false;console.error("Request submission failed",e)}
  finally{button.disabled=false;button.textContent=pendingSubmission?"Retry this request":$("type").value==="karaoke"?"Send karaoke request":"Send song request"}
 });
 $("popular").addEventListener("click",event=>{const button=event.target.closest("button[data-title]");if(!button)return;if(pendingSubmission){show("Retry or clear your previous request first.","bad");return}$("type").value=button.dataset.type==="karaoke"?"karaoke":"song";$("type").dispatchEvent(new Event("change"));$("title").value=button.dataset.title;$("artist").value=button.dataset.artist;$("request-heading").scrollIntoView({behavior:"smooth",block:"start"});$("title").focus()});
